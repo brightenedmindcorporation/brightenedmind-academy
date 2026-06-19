@@ -4,9 +4,7 @@ import bcrypt from "bcryptjs";
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-
-    const { fullName, email, password, level } = body;
+    const { fullName, email, password, level } = await request.json();
 
     if (!fullName || !email || !password || !level) {
       return NextResponse.json(
@@ -15,7 +13,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // 1. check user exists
     const existingUser = await prisma.user.findUnique({
       where: { email },
     });
@@ -27,37 +24,33 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. find course by level (IMPORTANT FIX)
-    const course = await prisma.course.findFirst({
-      where: { level },
-    });
+    // IMPORTANT: validate level exists in enum
+    const validLevels = ["A1", "A2", "B1", "B2", "C1", "C2"];
 
-    if (!course) {
+    if (!validLevels.includes(level)) {
       return NextResponse.json(
         { error: "Invalid level selected" },
         { status: 400 }
       );
     }
 
-    // 3. hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 4. create user linked to course
     const user = await prisma.user.create({
       data: {
         fullName,
         email,
         password: hashedPassword,
+        level, // 👈 OK car Level enum
         role: "STUDENT",
         status: "PENDING",
-        courseId: course.id,
       },
     });
 
     return NextResponse.json({
       success: true,
       userId: user.id,
-      message: "Registration submitted. Awaiting admin approval.",
+      message: "Registration successful. Awaiting admin approval.",
     });
   } catch (error) {
     console.error("REGISTER ERROR:", error);
