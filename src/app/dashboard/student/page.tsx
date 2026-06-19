@@ -1,93 +1,84 @@
-import StudentSidebar from "@/components/dashboard/StudentSidebar";
+"use client";
+
+import { useEffect, useState } from "react";
+
+type Lesson = {
+  id: string;
+  title: string;
+  content: string;
+};
+
+type Course = {
+  id: string;
+  title: string;
+  level: string;
+  lessons: Lesson[];
+};
 
 export default function StudentDashboard() {
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const res = await fetch("/api/courses");
+        const data = await res.json();
+
+        setCourses(data);
+      } catch (err) {
+        console.error("Error loading courses:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCourses();
+  }, []);
+
+  if (loading) {
+    return <p className="p-6">Loading courses...</p>;
+  }
+
   return (
-    <main className="flex min-h-screen bg-slate-50">
-      <StudentSidebar />
+    <main className="p-6">
+      <h1 className="text-2xl font-bold mb-6">
+        Student Dashboard
+      </h1>
 
-      <section className="flex-1 p-10">
-        <h1 className="text-4xl font-bold">
-          Welcome Back
-        </h1>
+      <div className="space-y-6">
+        {courses.map((course) => (
+          <div
+            key={course.id}
+            className="border rounded-xl p-4 bg-white shadow"
+          >
+            <h2 className="text-xl font-semibold">
+              {course.title}
+            </h2>
 
-        <p className="text-gray-600 mt-2">
-          Brightened Mind Academy Student Portal
-        </p>
-
-        {/* Student Card */}
-
-        <div className="bg-white rounded-2xl border p-6 mt-8">
-          <h2 className="text-xl font-semibold">
-            Student Information
-          </h2>
-
-          <div className="mt-4 space-y-2">
-            <p>
-              <strong>Name:</strong> John Doe
+            <p className="text-sm text-gray-500 mb-3">
+              Level: {course.level}
             </p>
 
-            <p>
-              <strong>Student ID:</strong> BMA-2026-0001
-            </p>
+            <div className="space-y-2">
+              {course.lessons.map((lesson) => (
+                <div
+                  key={lesson.id}
+                  className="p-3 border rounded bg-gray-50"
+                >
+                  <p className="font-medium">
+                    {lesson.title}
+                  </p>
 
-            <p>
-              <strong>Current Level:</strong> A1
-            </p>
+                  <p className="text-sm text-gray-600">
+                    {lesson.content}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-
-        {/* Stats */}
-
-        <div className="grid md:grid-cols-3 gap-6 mt-8">
-
-          <div className="bg-white border rounded-2xl p-6">
-            <h3 className="font-semibold">
-              Progress
-            </h3>
-
-            <p className="text-3xl mt-4">
-              35%
-            </p>
-          </div>
-
-          <div className="bg-white border rounded-2xl p-6">
-            <h3 className="font-semibold">
-              Points
-            </h3>
-
-            <p className="text-3xl mt-4">
-              120
-            </p>
-          </div>
-
-          <div className="bg-white border rounded-2xl p-6">
-            <h3 className="font-semibold">
-              Certificates
-            </h3>
-
-            <p className="text-3xl mt-4">
-              0
-            </p>
-          </div>
-
-        </div>
-
-        {/* Continue Learning */}
-
-        <div className="bg-white border rounded-2xl p-6 mt-8">
-          <h2 className="text-xl font-semibold">
-            Continue Learning
-          </h2>
-
-          <p className="mt-3 text-gray-600">
-            English Fundamentals - Lesson 3
-          </p>
-
-          <button className="mt-4 bg-red-600 text-white px-5 py-2 rounded-xl">
-            Resume Course
-          </button>
-        </div>
-      </section>
+        ))}
+      </div>
     </main>
   );
 }

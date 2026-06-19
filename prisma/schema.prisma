@@ -1,0 +1,142 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  TEACHER
+  ADMIN
+}
+
+enum Status {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum Level {
+  A1
+  A2
+  B1
+  B2
+  C1
+  C2
+}
+
+model User {
+  id       String @id @default(cuid())
+  fullName String
+  email    String @unique
+  password String
+
+  role   Role   @default(STUDENT)
+  status Status @default(PENDING)
+
+  matricule String? @unique
+  level     Level   @default(A1)
+
+  createdAt DateTime @default(now())
+
+  profile      StudentProfile?
+  certificates Certificate[]
+  progress     Progress[]
+}
+
+model StudentProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+
+  phone   String?
+  country String?
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Course {
+  id          String  @id @default(cuid())
+  title       String
+  description String?
+  level       Level
+
+  lessons Lesson[]
+
+  createdAt DateTime @default(now())
+}
+
+model Lesson {
+  id          String  @id @default(cuid())
+  title       String
+  description String?
+  content     String
+
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id])
+
+  quizzes  Quiz[]
+  progress Progress[]
+
+  createdAt DateTime @default(now())
+}
+
+model Quiz {
+  id String @id @default(cuid())
+
+  title String
+
+  isFinal Boolean @default(false)
+
+  lessonId String?
+  lesson   Lesson? @relation(fields: [lessonId], references: [id])
+
+  questions Question[]
+}
+
+model Question {
+  id String @id @default(cuid())
+
+  question String
+
+  optionA String
+  optionB String
+  optionC String
+  optionD String
+
+  correctAnswer String
+
+  quizId String
+  quiz   Quiz   @relation(fields: [quizId], references: [id])
+}
+
+model Progress {
+  id String @id @default(cuid())
+
+  userId   String
+  lessonId String
+
+  completed Boolean @default(false)
+  score     Int     @default(0)
+
+  user   User   @relation(fields: [userId], references: [id])
+  lesson Lesson @relation(fields: [lessonId], references: [id])
+
+  @@unique([userId, lessonId])
+}
+
+model Certificate {
+  id String @id @default(cuid())
+
+  userId String
+
+  level Level
+
+  issuedAt DateTime @default(now())
+
+  pdfUrl String?
+
+  user User @relation(fields: [userId], references: [id])
+}
